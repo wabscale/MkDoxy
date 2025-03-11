@@ -5,7 +5,7 @@ import shutil
 import re
 
 from pathlib import Path, PurePath
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, STDOUT
 from typing import Optional
 
 log: logging.Logger = logging.getLogger("mkdocs")
@@ -109,7 +109,10 @@ class DoxygenRun:
             }
 
         doxyCfg.update(doxyCfgNew)
-        doxyCfg["INPUT"] = self.doxygenSource
+        if "INPUT" in doxyCfg and self.doxygenSource != "...": # Dont overwrite input
+            doxyCfg["INPUT"].extend(self.doxygenSource)
+        else:
+            doxyCfg["INPUT"] = self.doxygenSource
         doxyCfg["OUTPUT_DIRECTORY"] = self.tempDoxyFolder
         return doxyCfg
 
@@ -156,6 +159,8 @@ class DoxygenRun:
         @return: (dict) Dictionary.
         """
         dox_dict = {}
+        dox_str = '\n'.join(line.strip() for line in dox_str.split("\n"))
+        dox_str = dox_str.replace('\\\n', '')
         dox_str = re.sub(r"\\\s*\n\s*", "", dox_str)
         pattern = r"^\s*([^=\s]+)\s*(=|\+=)\s*(.*)$"
 
@@ -237,11 +242,12 @@ class DoxygenRun:
             [self.doxygenBinPath, "-"],
             stdout=PIPE,
             stdin=PIPE,
-            stderr=PIPE,
+            stderr=STDOUT,
         )
-        (doxyBuilder.communicate(self.dox_dict2str(self.doxyCfg).encode("utf-8"))[0].decode().strip())
-        # log.info(self.destinationDir)
-        # log.info(stdout_data)
+        doxygen_cfg = self.dox_dict2str(self.doxyCfg).encode("utf-8")
+        stdout = doxyBuilder.communicate(doxygen_cfg)[0].decode().strip()
+        # log.info(doxygen_cfg.decode())
+        log.info(stdout)
 
     def checkAndRun(self):
         """! Check if the source files have changed since the last run and run Doxygen if they have.
