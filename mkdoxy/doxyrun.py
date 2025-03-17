@@ -110,7 +110,7 @@ class DoxygenRun:
 
         doxyCfg.update(doxyCfgNew)
         if "INPUT" in doxyCfg and self.doxygenSource != "...": # Dont overwrite input
-            doxyCfg["INPUT"].extend(self.doxygenSource)
+            doxyCfg["INPUT"] + " " + self.doxygenSource
         else:
             doxyCfg["INPUT"] = self.doxygenSource
         doxyCfg["OUTPUT_DIRECTORY"] = self.tempDoxyFolder
@@ -246,7 +246,7 @@ class DoxygenRun:
         )
         doxygen_cfg = self.dox_dict2str(self.doxyCfg).encode("utf-8")
         stdout = doxyBuilder.communicate(doxygen_cfg)[0].decode().strip()
-        # log.info(doxygen_cfg.decode())
+        log.info(doxygen_cfg.decode())
         log.info(stdout)
 
     def checkAndRun(self):
